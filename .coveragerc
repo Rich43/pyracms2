@@ -1,0 +1,3 @@
+[run]
+source = pyracms2
+omit = pyracms2/test*
