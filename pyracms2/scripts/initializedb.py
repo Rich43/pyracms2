@@ -15,7 +15,7 @@ from ..models import (
     get_session_factory,
     get_tm_session,
     )
-from ..models.mymodel import *
+from ..models.model import *
 
 
 def usage(argv):
