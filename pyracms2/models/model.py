@@ -20,6 +20,28 @@ class UserGroup(Base):
     group_id = Column(Integer, ForeignKey('group.id'))
 
 
+class Translation(Base):
+    """
+    A translation for a particular language.
+    """
+    __tablename__ = 'translation'
+    id = Column(Integer, primary_key=True)
+    translation_id = Column(Integer, ForeignKey('translations.id'))
+    name = Column(Unicode)
+    display_name = Column(UnicodeText)
+    description = Column(UnicodeText)
+    locale = Column(LocaleType)
+
+
+class Translations(Base):
+    """
+    A collection of languages that you want to translate the translation to.
+    """
+    __tablename__ = 'translations'
+    id = Column(Integer, primary_key=True)
+    translations = relationship(Translation)
+
+
 class Group(Base):
     __tablename__ = 'group'
     id = Column(Integer, primary_key=True)
@@ -42,28 +64,6 @@ class User(Base):
     entity_id = Column(Integer, ForeignKey('entity.id'))
     entity = relationship(Translations, back_populates='entity')
     group = relationship(UserGroup, back_populates='group')
-
-
-class Translation(Base):
-    """
-    A translation for a particular language.
-    """
-    __tablename__ = 'translation'
-    id = Column(Integer, primary_key=True)
-    translation_id = Column(Integer, ForeignKey('translations.id'))
-    name = Column(Unicode)
-    display_name = Column(UnicodeText)
-    description = Column(UnicodeText)
-    locale = Column(LocaleType)
-
-
-class Translations(Base):
-    """
-    A collection of languages that you want to translate the translation to.
-    """
-    __tablename__ = 'translations'
-    id = Column(Integer, primary_key=True)
-    translations = relationship(Translation)
 
 
 class EntityEntity(Base):
