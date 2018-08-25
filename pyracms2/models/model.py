@@ -20,15 +20,6 @@ class UserGroup(Base):
     group_id = Column(Integer, ForeignKey('group.id'))
 
 
-class Translations(Base):
-    """
-    A collection of languages that you want to translate the translation to.
-    """
-    __tablename__ = 'translations'
-    id = Column(Integer, primary_key=True)
-    translations = relationship(Translation)
-
-
 class Group(Base):
     __tablename__ = 'group'
     id = Column(Integer, primary_key=True)
@@ -64,6 +55,15 @@ class Translation(Base):
     display_name = Column(UnicodeText)
     description = Column(UnicodeText)
     locale = Column(LocaleType)
+
+
+class Translations(Base):
+    """
+    A collection of languages that you want to translate the translation to.
+    """
+    __tablename__ = 'translations'
+    id = Column(Integer, primary_key=True)
+    translations = relationship(Translation)
 
 
 class EntityEntity(Base):
