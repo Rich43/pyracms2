@@ -1,8 +1,6 @@
-from sqlalchemy import (
-    Column, Integer, UnicodeText, Unicode, ForeignKey)
+from sqlalchemy import Column, Integer, UnicodeText, Unicode, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy_utils import (
-    PasswordType, LocaleType, EmailType, CountryType)
+from sqlalchemy_utils import PasswordType, LocaleType, EmailType, CountryType
 
 from .meta import Base
 
