@@ -1,29 +1,44 @@
-from sqlalchemy import Column, Integer, UnicodeText, Unicode, ForeignKey
-from sqlalchemy.orm import relationship
+from datetime import datetime
+
+from sqlalchemy import (Column, Integer, UnicodeText, Unicode, ForeignKey,
+                        DateTime)
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import relationship, MapperExtension
 from sqlalchemy_utils import PasswordType, LocaleType, EmailType, CountryType
 
 from .meta import Base
 
 
-class Domain(Base):
-    __tablename__ = 'domain'
+class BaseExtension(MapperExtension):
+    """Base entension class for all entity """
+
+    def before_update(self, mapper, connection, instance):
+        """ set the updated_at  """
+        instance.updated = datetime.utcnow()
+
+
+class BaseMixin(object):
+
+    @declared_attr
+    def __tablename__(self):
+        return self.__name__.lower()
+
+    __table_args__ = {'mysql_engine': 'InnoDB'}
+    __mapper_args__ = {'extension': BaseExtension()}
+
     id = Column(Integer, primary_key=True)
+    created = Column(DateTime, default=datetime.utcnow)
+    updated = Column(DateTime, default=datetime.utcnow)
+
+
+class Domain(Base, BaseMixin):
     name = Column(Unicode)
 
 
-class UserGroup(Base):
-    __tablename__ = 'user_group'
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.id'))
-    group_id = Column(Integer, ForeignKey('group.id'))
-
-
-class Translation(Base):
+class Translation(Base, BaseMixin):
     """
     A translation for a particular language.
     """
-    __tablename__ = 'translation'
-    id = Column(Integer, primary_key=True)
     translation_id = Column(Integer, ForeignKey('translations.id'))
     name = Column(Unicode)
     display_name = Column(UnicodeText)
@@ -31,27 +46,26 @@ class Translation(Base):
     locale = Column(LocaleType)
 
 
-class Translations(Base):
+class Translations(Base, BaseMixin):
     """
     A collection of languages that you want to translate the translation to.
     """
-    __tablename__ = 'translations'
-    id = Column(Integer, primary_key=True)
     translations = relationship(Translation)
 
 
-class Group(Base):
-    __tablename__ = 'group'
-    id = Column(Integer, primary_key=True)
+class UserGroup(Base, BaseMixin):
+    user_id = Column(Integer, ForeignKey('user.id'))
+    group_id = Column(Integer, ForeignKey('group.id'))
+
+
+class Group(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
     display_name = relationship(Translations, back_populates='translations')
-    user = relationship(UserGroup, back_populates='user')
+    user = relationship("User", secondary=UserGroup, back_populates='group')
 
 
-class User(Base):
-    __tablename__ = 'user'
-    id = Column(Integer, primary_key=True)
+class User(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
     display_name = relationship(Translations, back_populates='translations')
@@ -61,26 +75,20 @@ class User(Base):
     country = Column(CountryType)
     entity_id = Column(Integer, ForeignKey('entity.id'))
     entity = relationship(Translations, back_populates='entity')
-    group = relationship(UserGroup, back_populates='group')
+    group = relationship("Group", secondary=UserGroup, back_populates='user')
 
 
-class EntityEntity(Base):
-    __tablename__ = 'entity_entity'
-    id = Column(Integer, primary_key=True)
+class EntityEntity(Base, BaseMixin):
     entity_one_id = Column(Integer, ForeignKey('entity.id'))
     entity_two_id = Column(Integer, ForeignKey('entity.id'))
 
 
-class EntityTranslations(Base):
-    __tablename__ = 'entity_translations'
-    id = Column(Integer, primary_key=True)
+class EntityTranslations(Base, BaseMixin):
     entity_id = Column(Integer, ForeignKey('entity.id'))
     translations_id = Column(Integer, ForeignKey('translations.id'))
 
 
-class Entity(Base):
-    __tablename__ = 'entity'
-    id = Column(Integer, primary_key=True)
+class Entity(Base, BaseMixin):
     name = Column(Unicode)
     route_name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
@@ -89,6 +97,3 @@ class Entity(Base):
     domain = relationship(Domain, back_populates='domain')
     entity = relationship(EntityEntity, back_populates='entity')
     translations = relationship(EntityTranslations, back_populates='entity')
-
-
-# Index('my_index', MyModel.name, unique=True, mysql_length=255)
