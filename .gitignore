@@ -53,3 +53,5 @@ fabric.properties
 .idea/**
 pyracms2.sqlite
 pyracms2.egg-info/**
+venv/**
+**/__pycache__/**
