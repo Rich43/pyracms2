@@ -50,6 +50,6 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-.idea/
+.idea/**
 pyracms2.sqlite
-pyracms2.egg-info/
+pyracms2.egg-info/**
