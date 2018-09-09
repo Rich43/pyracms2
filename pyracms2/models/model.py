@@ -1,7 +1,8 @@
 from datetime import datetime
 
+from babel import Locale
 from sqlalchemy import (Column, Integer, UnicodeText, Unicode, ForeignKey,
-                        DateTime)
+                        DateTime, Table)
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, MapperExtension
 from sqlalchemy_utils import PasswordType, LocaleType, EmailType, CountryType
@@ -13,7 +14,6 @@ class BaseExtension(MapperExtension):
     """Base entension class for all entity """
 
     def before_update(self, mapper, connection, instance):
-        """ set the updated_at  """
         instance.updated = datetime.utcnow()
 
 
@@ -33,6 +33,8 @@ class BaseMixin(object):
 
 class Domain(Base, BaseMixin):
     name = Column(Unicode)
+    display_name = Column(Unicode)
+    url = Column(Unicode)
 
 
 class Translation(Base, BaseMixin):
@@ -45,6 +47,13 @@ class Translation(Base, BaseMixin):
     description = Column(UnicodeText)
     locale = Column(LocaleType)
 
+    def __init__(self, name: str, display_name: str, description: str,
+                 locale: Locale):
+        self.name = name
+        self.display_name = display_name
+        self.description = description
+        self.locale = locale
+
 
 class Translations(Base, BaseMixin):
     """
@@ -53,47 +62,57 @@ class Translations(Base, BaseMixin):
     translations = relationship(Translation)
 
 
-class UserGroup(Base, BaseMixin):
-    user_id = Column(Integer, ForeignKey('user.id'))
-    group_id = Column(Integer, ForeignKey('group.id'))
+entityentity = Table('entityentity', Base.metadata,
+                     Column("entity_one_id", Integer,
+                            ForeignKey('entity.id')),
+                     Column("entity_two_id", Integer,
+                            ForeignKey('entity.id'))
+                     )
+
+entitytranslations = Table('entitytranslations', Base.metadata,
+                           Column("entity_id", Integer,
+                                  ForeignKey('entity.id')),
+                           Column("translations_id", Integer,
+                                  ForeignKey('translations.id'))
+                           )
+
+
+class Entity(Base, BaseMixin):
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode)
+    route_name = Column(Unicode)
+    display_name_id = Column(Integer, ForeignKey('translations.id'))
+    display_name = relationship(Translations)
+    domain_id = Column(Integer, ForeignKey('domain.id'))
+    domain = relationship(Domain)
+    translations = relationship(Translations, secondary=entitytranslations)
+    entities = relationship("Entity", secondary=entityentity,
+                            back_populates='entities',
+                            primaryjoin=id == entityentity.c.entity_one_id,
+                            secondaryjoin=id == entityentity.c.entity_two_id)
+
+
+usergroup = Table('usergroup', Base.metadata,
+                  Column('user_id', Integer, ForeignKey('user.id')),
+                  Column('group_id', Integer, ForeignKey('group.id'))
+                  )
 
 
 class Group(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations, back_populates='translations')
-    user = relationship("User", secondary=UserGroup, back_populates='group')
+    display_name = relationship(Translations)
+    user = relationship("User", secondary=usergroup, back_populates='group')
 
 
 class User(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations, back_populates='translations')
+    display_name = relationship(Translations)
     password = Column(PasswordType(schemes=['pbkdf2_sha512']))
     locale = Column(LocaleType)
     email = Column(EmailType)
     country = Column(CountryType)
     entity_id = Column(Integer, ForeignKey('entity.id'))
-    entity = relationship(Translations, back_populates='entity')
-    group = relationship("Group", secondary=UserGroup, back_populates='user')
-
-
-class EntityEntity(Base, BaseMixin):
-    entity_one_id = Column(Integer, ForeignKey('entity.id'))
-    entity_two_id = Column(Integer, ForeignKey('entity.id'))
-
-
-class EntityTranslations(Base, BaseMixin):
-    entity_id = Column(Integer, ForeignKey('entity.id'))
-    translations_id = Column(Integer, ForeignKey('translations.id'))
-
-
-class Entity(Base, BaseMixin):
-    name = Column(Unicode)
-    route_name = Column(Unicode)
-    display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations, back_populates='translations')
-    domain_id = Column(Integer, ForeignKey('domain.id'))
-    domain = relationship(Domain, back_populates='domain')
-    entity = relationship(EntityEntity, back_populates='entity')
-    translations = relationship(EntityTranslations, back_populates='entity')
+    entity = relationship(Entity)
+    group = relationship(Group, secondary=usergroup, back_populates='user')

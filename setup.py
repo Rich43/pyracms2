@@ -16,6 +16,7 @@ requires = [
     'SQLAlchemy',
     'sqlalchemy-utils',
     'babel',
+    'passlib',
     'transaction',
     'zope.sqlalchemy',
     'waitress',
