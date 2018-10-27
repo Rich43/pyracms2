@@ -2,7 +2,7 @@ from datetime import datetime
 
 from babel import Locale
 from sqlalchemy import (Column, Integer, UnicodeText, Unicode, ForeignKey,
-                        DateTime, Table)
+                        DateTime, Table, Numeric, Boolean)
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, MapperExtension
 from sqlalchemy_utils import PasswordType, LocaleType, EmailType, CountryType
@@ -62,19 +62,40 @@ class Translations(Base, BaseMixin):
     translations = relationship(Translation)
 
 
-entityentity = Table('entityentity', Base.metadata,
-                     Column("entity_one_id", Integer,
+entity_entity = Table('entityentity', Base.metadata,
+                      Column("entity_one_id", Integer,
                             ForeignKey('entity.id')),
-                     Column("entity_two_id", Integer,
+                      Column("entity_two_id", Integer,
                             ForeignKey('entity.id'))
-                     )
+                      )
 
-entitytranslations = Table('entitytranslations', Base.metadata,
-                           Column("entity_id", Integer,
+entity_translations = Table('entitytranslations', Base.metadata,
+                            Column("entity_id", Integer,
                                   ForeignKey('entity.id')),
-                           Column("translations_id", Integer,
+                            Column("translations_id", Integer,
                                   ForeignKey('translations.id'))
-                           )
+                            )
+
+
+class DataType(Base, BaseMixin):
+    name = Column(Unicode)
+    entity = ForeignKey('entity.id')
+
+
+class Strings(DataType):
+    string = Column(UnicodeText)
+
+
+class Integers(DataType):
+    integer = Column(Integer)
+
+
+class Floats(DataType):
+    float = Column(Numeric)
+
+
+class Booleans(DataType):
+    boolean = Column(Boolean)
 
 
 class Entity(Base, BaseMixin):
@@ -85,24 +106,28 @@ class Entity(Base, BaseMixin):
     display_name = relationship(Translations)
     domain_id = Column(Integer, ForeignKey('domain.id'))
     domain = relationship(Domain)
-    translations = relationship(Translations, secondary=entitytranslations)
-    entities = relationship("Entity", secondary=entityentity,
+    translations = relationship(Translations, secondary=entity_translations)
+    entities = relationship("Entity", secondary=entity_entity,
                             back_populates='entities',
-                            primaryjoin=id == entityentity.c.entity_one_id,
-                            secondaryjoin=id == entityentity.c.entity_two_id)
+                            primaryjoin=id == entity_entity.c.entity_one_id,
+                            secondaryjoin=id == entity_entity.c.entity_two_id)
+    strings = relationship(Strings)
+    booleans = relationship(Booleans)
+    integers = relationship(Integers)
+    floats = relationship(Floats)
 
 
-usergroup = Table('usergroup', Base.metadata,
-                  Column('user_id', Integer, ForeignKey('user.id')),
-                  Column('group_id', Integer, ForeignKey('group.id'))
-                  )
+user_group = Table('usergroup', Base.metadata,
+                   Column('user_id', Integer, ForeignKey('user.id')),
+                   Column('group_id', Integer, ForeignKey('group.id'))
+                   )
 
 
 class Group(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
     display_name = relationship(Translations)
-    user = relationship("User", secondary=usergroup, back_populates='group')
+    user = relationship("User", secondary=user_group, back_populates='group')
 
 
 class User(Base, BaseMixin):
@@ -115,4 +140,4 @@ class User(Base, BaseMixin):
     country = Column(CountryType)
     entity_id = Column(Integer, ForeignKey('entity.id'))
     entity = relationship(Entity)
-    group = relationship(Group, secondary=usergroup, back_populates='user')
+    group = relationship(Group, secondary=user_group, back_populates='user')
