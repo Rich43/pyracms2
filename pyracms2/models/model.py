@@ -77,25 +77,28 @@ entity_translations = Table('entitytranslations', Base.metadata,
                             )
 
 
-class DataType(Base, BaseMixin):
+class DataType(BaseMixin):
     name = Column(Unicode)
-    entity = ForeignKey('entity.id')
+
+    @declared_attr
+    def entity_id(self):
+        return Column(Integer, ForeignKey('entity.id'))
 
 
-class Strings(DataType):
+class Strings(Base, DataType):
     string = Column(UnicodeText)
 
 
-class Integers(DataType):
+class Integers(Base, DataType):
     integer = Column(Integer)
 
 
-class Floats(DataType):
+class Floats(Base, DataType):
     float = Column(Numeric)
 
 
-class Booleans(DataType):
-    boolean = Column(Boolean)
+class Booleans(Base, DataType):
+    boolean = Column(Boolean(name="boolean"))
 
 
 class Entity(Base, BaseMixin):
