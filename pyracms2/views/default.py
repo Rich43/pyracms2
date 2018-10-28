@@ -3,17 +3,18 @@ from pyramid.view import view_config
 
 from sqlalchemy.exc import DBAPIError
 
-from ..models import User
+from ..models.model import create_fingerprint
 
 
 @view_config(route_name='home', renderer='../templates/mytemplate.jinja2')
 def my_view(request):
     try:
-        query = request.dbsession.query(MyModel)
-        one = query.filter(MyModel.name == 'one').first()
+        # query = request.dbsession.query(MyModel)
+        # one = query.filter(MyModel.name == 'one').first()
+        pass
     except DBAPIError:
         return Response(db_err_msg, content_type='text/plain', status=500)
-    return {'one': one, 'project': 'pyracms2'}
+    return {'one': create_fingerprint(), 'project': 'pyracms2'}
 
 
 db_err_msg = """\

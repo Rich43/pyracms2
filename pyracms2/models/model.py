@@ -1,6 +1,8 @@
 from datetime import datetime
+from string import ascii_letters, digits
 
 from babel import Locale
+from nanoid import generate
 from sqlalchemy import (Column, Integer, UnicodeText, Unicode, ForeignKey,
                         DateTime, Table, Numeric, Boolean)
 from sqlalchemy.ext.declarative import declared_attr
@@ -10,9 +12,13 @@ from sqlalchemy_utils import PasswordType, LocaleType, EmailType, CountryType
 from .meta import Base
 
 
-class BaseExtension(MapperExtension):
-    """Base entension class for all entity """
+def create_fingerprint():
+    return generate(ascii_letters + digits, 8)
 
+
+class BaseExtension(MapperExtension):
+
+    """Base entension class for all entity """
     def before_update(self, mapper, connection, instance):
         instance.updated = datetime.utcnow()
 
@@ -27,6 +33,7 @@ class BaseMixin(object):
     __mapper_args__ = {'extension': BaseExtension()}
 
     id = Column(Integer, primary_key=True)
+    fingerprint = Column(Unicode, unique=True, default=create_fingerprint)
     created = Column(DateTime, default=datetime.utcnow)
     updated = Column(DateTime, default=datetime.utcnow)
 
