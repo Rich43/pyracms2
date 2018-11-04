@@ -55,5 +55,6 @@ setup(name='pyracms2',
       main = pyracms2:main
       [console_scripts]
       initialize_pyracms2_db = pyracms2.scripts.initializedb:main
+      pyracms2_patch_editor = pyracms2.scripts.patch_editor:main
       """,
       )
