@@ -15,9 +15,9 @@ def iter_sub_classes(cls):
 # noinspection PyProtectedMember
 def add_parser_set_default(sub_parser: argparse._SubParsersAction, name: str,
                            level: int):
-    root_add_parser = sub_parser.add_parser(name)
-    root_add_parser.set_defaults(**{'sub_parser_' + str(level): name})
-    return root_add_parser
+    add_parser = sub_parser.add_parser(name)
+    add_parser.set_defaults(**{'sub_parser_' + str(level): name})
+    return add_parser
 
 
 # noinspection PyProtectedMember
