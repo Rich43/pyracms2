@@ -1,47 +1,30 @@
 import argparse
+import sys
+
 from pyracms2.models import model
 
-
-class ThrowAwayArgumentParser(argparse.ArgumentParser):
-    def _print_message(self, message, file=None):
-        pass
-
-    def exit(self, status=0, message=None):
-        pass
+SUB_COMMAND_HELP = 'sub-command --help'
 
 
 def iter_sub_classes(cls):
     return [x.__name__ for x in cls.__subclasses__()]
 
 
-DESCRIPTION = 'Patch File Editor'
-ARGUMENTS = [
-    {'name': '--add', 'type': str,
-     'choices': iter_sub_classes(model.Base), 'help': 'Add a row'}
-]
-
-
-def setup_argument_parser(arg_parser: argparse.ArgumentParser):
-    for argument in ARGUMENTS:
-        argument_copy = dict(argument)
-        name = argument_copy['name']
-        del argument_copy['name']
-        arg_parser.add_argument(name, **argument_copy)
+# noinspection PyProtectedMember
+def insert_add_sub_parser(sub_parser: argparse._SubParsersAction):
+    add_parser = sub_parser.add_parser('add')
+    add_help = " (Choose a table to add a row to)"
+    add_sub_parser = add_parser.add_subparsers(help=SUB_COMMAND_HELP + add_help)
+    for cls in iter_sub_classes(model.Base):
+        add_parser = add_sub_parser.add_parser(cls)
+        db_cls = getattr(model, cls)
+        attributes = db_cls.__table__.columns.keys()
+        for attribute in attributes:
+            add_parser.add_argument('--' + attribute, type=str)
 
 
 def main():
-    dummy_parser = ThrowAwayArgumentParser()
-    setup_argument_parser(dummy_parser)
-    args = dummy_parser.parse_args()
-
-    if args.add:
-        parser = argparse.ArgumentParser(DESCRIPTION)
-        cls = getattr(model, args.add)
-        attributes = cls.__table__.columns.keys()
-        attributes_sub_parser = root_parser.add_subparsers()
-        attributes_parser = attributes_sub_parser.add_parser('attributes')
-        for attribute in attributes:
-            attributes_parser.add_argument('--' + attribute, type=str,
-                                           help=attribute)
-
-    root_parser.parse_args()
+    root_parser = argparse.ArgumentParser()
+    root_sub_parser = root_parser.add_subparsers(help=SUB_COMMAND_HELP)
+    insert_add_sub_parser(root_sub_parser)
+    root_parser.parse_args(None if sys.argv[1:] else ['-h'])
