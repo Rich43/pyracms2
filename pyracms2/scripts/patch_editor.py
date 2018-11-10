@@ -10,15 +10,21 @@ def iter_sub_classes(cls):
 
 
 # noinspection PyProtectedMember
+def add_parser_set_default(sub_parser: argparse._SubParsersAction, name: str,
+                           level: int):
+    root_add_parser = sub_parser.add_parser(name)
+    root_add_parser.set_defaults(**{'sub_parser_' + str(level): name})
+    return root_add_parser
+
+
+# noinspection PyProtectedMember
 def insert_add_sub_parser(sub_parser: argparse._SubParsersAction):
-    root_add_parser = sub_parser.add_parser('add')
-    root_add_parser.set_defaults(sub_parser_1='add')
+    root_add_parser = add_parser_set_default(sub_parser, 'add', 1)
     add_sub_parser = root_add_parser.add_subparsers(
         help=SUB_COMMAND_HELP + " (Choose a table to add a row to)"
     )
     for cls in iter_sub_classes(model.Base):
-        add_parser = add_sub_parser.add_parser(cls)
-        add_parser.set_defaults(sub_parser_2=cls)
+        add_parser = add_parser_set_default(add_sub_parser, cls, 2)
         db_cls = getattr(model, cls)
         attributes = db_cls.__table__.columns.keys()
         for attribute in attributes:
