@@ -20,6 +20,16 @@ def add_parser_set_default(sub_parser: argparse._SubParsersAction, name: str,
     return add_parser
 
 
+def sql_alchemy_type_to_python_type(attribute: str, db_cls):
+    try:
+        python_type = getattr(db_cls, attribute).type.python_type
+    except NotImplementedError:
+        python_type = str
+    if python_type.__name__ == 'datetime':
+        python_type = parse
+    return python_type
+
+
 # noinspection PyProtectedMember
 def insert_add_sub_parser(sub_parser: argparse._SubParsersAction):
     root_add_parser = add_parser_set_default(sub_parser, 'add', 1)
@@ -31,12 +41,7 @@ def insert_add_sub_parser(sub_parser: argparse._SubParsersAction):
         db_cls = getattr(model, cls)
         attributes = db_cls.__table__.columns.keys()
         for attribute in attributes:
-            try:
-                python_type = getattr(db_cls, attribute).type.python_type
-            except NotImplementedError:
-                python_type = str
-            if python_type.__name__ == 'datetime':
-                python_type = parse
+            python_type = sql_alchemy_type_to_python_type(attribute, db_cls)
             add_parser.add_argument('--' + attribute, type=python_type)
 
 
