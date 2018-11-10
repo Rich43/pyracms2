@@ -21,7 +21,8 @@ requires = [
     'transaction',
     'zope.sqlalchemy',
     'waitress',
-    'nanoid'
+    'nanoid',
+    'python-dateutil'
 ]
 
 tests_require = [
