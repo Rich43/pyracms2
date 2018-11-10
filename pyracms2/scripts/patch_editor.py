@@ -6,6 +6,8 @@ from dateutil.parser import parse
 from ..models import model
 
 SUB_COMMAND_HELP = 'sub-command --help'
+SUB_PARSER = 'sub_parser_'
+OBJ = '_obj'
 
 
 def iter_sub_classes(cls):
@@ -16,7 +18,8 @@ def iter_sub_classes(cls):
 def add_parser_set_default(sub_parser: argparse._SubParsersAction, name: str,
                            level: int):
     add_parser = sub_parser.add_parser(name)
-    add_parser.set_defaults(**{'sub_parser_' + str(level): name})
+    add_parser.set_defaults(**{SUB_PARSER + str(level): name})
+    add_parser.set_defaults(**{SUB_PARSER + str(level) + OBJ: add_parser})
     return add_parser
 
 
@@ -45,9 +48,23 @@ def insert_add_sub_parser(sub_parser: argparse._SubParsersAction):
             add_parser.add_argument('--' + attribute, type=python_type)
 
 
+def sub_parsers(args: argparse.Namespace):
+    return {k: v for k, v in args.__dict__.items()
+            if k.startswith(SUB_PARSER) and not k.endswith(OBJ)
+            and v is not None}.items()
+
+
+def all_values_none(args: argparse.Namespace):
+    return not any([v for k, v in args.__dict__.items()
+                    if not k.startswith(SUB_PARSER)])
+
+
 def main():
     root_parser = argparse.ArgumentParser()
     root_sub_parser = root_parser.add_subparsers(help=SUB_COMMAND_HELP)
     insert_add_sub_parser(root_sub_parser)
     args = root_parser.parse_args(None if sys.argv[1:] else ['-h'])
-    print(args)
+    sub_parser_length = len(sub_parsers(args))
+    if bool(sub_parser_length) and all_values_none(args):
+        parser = getattr(args, SUB_PARSER + str(sub_parser_length) + OBJ)
+        parser.print_help()
