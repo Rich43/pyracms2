@@ -38,13 +38,6 @@ class Util:
             python_type = parse
         return python_type
 
-    @staticmethod
-    def show_sub_parser_help(args: argparse.Namespace):
-        sub_parser_length = len(Util.sub_parsers(args))
-        if bool(sub_parser_length) and Util.all_values_none(args):
-            parser = getattr(args, SUB_PARSER + str(sub_parser_length) + OBJ)
-            parser.print_help()
-
 
 class Parser:
     # noinspection PyProtectedMember
@@ -82,9 +75,26 @@ class Parser:
                 add_parser.add_argument('--' + attribute, type=python_type)
 
 
+class ResultHandler:
+    def __init__(self, args: argparse.Namespace):
+        self.args = args
+
+    def handle(self):
+        self.show_sub_parser_help()
+
+    def show_sub_parser_help(self):
+        sub_parser_length = len(Util.sub_parsers(self.args))
+        if bool(sub_parser_length) and Util.all_values_none(self.args):
+            parser = getattr(
+                self.args,
+                SUB_PARSER + str(sub_parser_length) + OBJ
+            )
+            parser.print_help()
+
+
 def main():
     root_parser = argparse.ArgumentParser()
     root_sub_parser = root_parser.add_subparsers(help=SUB_COMMAND_HELP)
     Parser(root_sub_parser).setup()
     args = root_parser.parse_args(None if sys.argv[1:] else ['-h'])
-    Util.show_sub_parser_help(args)
+    ResultHandler(args).handle()
