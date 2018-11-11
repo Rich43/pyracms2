@@ -31,19 +31,19 @@ class Util:
 
     @staticmethod
     def sub_parsers(args: argparse.Namespace):
-        return {k: v for k, v in args.__dict__.items()
+        return {k: v for k, v in vars(args).items()
                 if k.startswith(SUB_PARSER) and not k.endswith(OBJ)
                 and v is not None}.items()
 
     @staticmethod
     def arguments(args: argparse.Namespace):
-        result = {k: v for k, v in args.__dict__.items() if
+        result = {k: v for k, v in vars(args).items() if
                   not k.startswith(SUB_PARSER) and v is not None}
         return SimpleNamespace(**result)
 
     @staticmethod
     def all_values_none(args: argparse.Namespace):
-        return not any([v for k, v in args.__dict__.items()
+        return not any([v for k, v in vars(args).items()
                         if not k.startswith(SUB_PARSER)])
 
     @staticmethod
@@ -107,7 +107,7 @@ class ResultHandler:
         self.print_help = True
         self.has_sub_parser_1 = hasattr(self.args, SUB_PARSER + '1')
         self.has_sub_parser_2 = hasattr(self.args, SUB_PARSER + '2')
-        self.has_arguments = len(self.args_no_sub_parser.__dict__) > 0
+        self.has_arguments = len(vars(self.args_no_sub_parser)) > 0
 
     def handle(self):
         self.handle_add()
