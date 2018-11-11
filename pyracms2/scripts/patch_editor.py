@@ -1,9 +1,21 @@
 import argparse
 import sys
+from types import SimpleNamespace
 
+import transaction
 from dateutil.parser import parse
+from pyramid.paster import (
+    get_appsettings,
+    setup_logging,
+)
+from sqlalchemy.orm import Session
 
-from ..models import model
+from ..models import (
+    model,
+    get_engine,
+    get_session_factory,
+    get_tm_session,
+)
 
 SUB_COMMAND_HELP = 'sub-command --help'
 SUB_PARSER = 'sub_parser_'
@@ -24,6 +36,12 @@ class Util:
                 and v is not None}.items()
 
     @staticmethod
+    def arguments(args: argparse.Namespace):
+        result = {k: v for k, v in args.__dict__.items() if
+                  not k.startswith(SUB_PARSER) and v is not None}
+        return SimpleNamespace(**result)
+
+    @staticmethod
     def all_values_none(args: argparse.Namespace):
         return not any([v for k, v in args.__dict__.items()
                         if not k.startswith(SUB_PARSER)])
@@ -37,6 +55,13 @@ class Util:
         if python_type.__name__ == 'datetime':
             python_type = parse
         return python_type
+
+    @staticmethod
+    def setup_database(config):
+        setup_logging(config)
+        settings = get_appsettings(config)
+        engine = get_engine(settings)
+        return get_session_factory(engine)
 
 
 class Parser:
@@ -56,7 +81,6 @@ class Parser:
     def setup(self):
         self.insert_add_sub_parser()
 
-    # noinspection PyProtectedMember
     def insert_add_sub_parser(self):
         root_add_parser = Parser.add_parser_set_default(self.root_sub_parser,
                                                         ADD, 1)
@@ -76,25 +100,43 @@ class Parser:
 
 
 class ResultHandler:
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args: argparse.Namespace, db_session: Session):
+        self.db_session = db_session
         self.args = args
+        self.args_no_sub_parser = Util.arguments(args)
+        self.print_help = True
+        self.has_sub_parser_1 = hasattr(self.args, SUB_PARSER + '1')
+        self.has_sub_parser_2 = hasattr(self.args, SUB_PARSER + '2')
+        self.has_arguments = len(self.args_no_sub_parser.__dict__) > 0
 
     def handle(self):
-        self.show_sub_parser_help()
+        self.handle_add()
 
-    def show_sub_parser_help(self):
-        sub_parser_length = len(Util.sub_parsers(self.args))
-        if bool(sub_parser_length) and Util.all_values_none(self.args):
-            parser = getattr(
-                self.args,
-                SUB_PARSER + str(sub_parser_length) + OBJ
-            )
-            parser.print_help()
+    def handle_add(self):
+        if (self.has_sub_parser_1 and self.has_sub_parser_2 and
+                self.has_arguments and self.args.sub_parser_1 == ADD):
+            db_cls = getattr(model, self.args.sub_parser_2, None)
+            self.print_help = False
 
 
 def main():
     root_parser = argparse.ArgumentParser()
+    root_parser.add_argument("config_file", type=str)
     root_sub_parser = root_parser.add_subparsers(help=SUB_COMMAND_HELP)
     Parser(root_sub_parser).setup()
     args = root_parser.parse_args(None if sys.argv[1:] else ['-h'])
-    ResultHandler(args).handle()
+    session_factory = Util.setup_database(args.config_file)
+    del args.config_file
+    with transaction.manager:
+        db_session = get_tm_session(session_factory, transaction.manager)
+        handler = ResultHandler(args, db_session)
+        handler.handle()
+    if handler.print_help:
+        sub_parser_length = len(Util.sub_parsers(args))
+        sub_parser_name = SUB_PARSER + str(sub_parser_length) + OBJ
+        if hasattr(args, sub_parser_name):
+            parser = getattr(args, sub_parser_name)
+        else:
+            parser = root_parser
+        parser.print_help()
+        exit(1)
