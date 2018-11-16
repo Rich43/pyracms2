@@ -127,6 +127,11 @@ class Entity(Base, BaseMixin):
     floats = relationship(Floats)
 
 
+class RootEntities(Base, BaseMixin):
+    entity_id = Column(Integer, ForeignKey('entity.id'))
+    entity = relationship(Entity)
+
+
 user_group = Table('usergroup', Base.metadata,
                    Column('user_id', Integer, ForeignKey('user.id')),
                    Column('group_id', Integer, ForeignKey('group.id'))
