@@ -7,6 +7,7 @@ from sqlalchemy import (Column, Integer, UnicodeText, Unicode, ForeignKey,
                         DateTime, Table, Numeric, Boolean)
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, MapperExtension
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy_utils import PasswordType, LocaleType, EmailType, CountryType
 
 from .meta import Base
@@ -66,7 +67,7 @@ class Translations(Base, BaseMixin):
     """
     A collection of languages that you want to translate the translation to.
     """
-    translations = relationship(Translation)
+    translations = relationship(Translation, cascade='all, delete-orphan')
 
 
 entity_entity = Table('entityentity', Base.metadata,
@@ -113,18 +114,21 @@ class Entity(Base, BaseMixin):
     name = Column(Unicode)
     route_name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations)
+    display_name = relationship(Translations, cascade='all, delete-orphan')
     domain_id = Column(Integer, ForeignKey('domain.id'))
     domain = relationship(Domain)
     translations = relationship(Translations, secondary=entity_translations)
     entities = relationship("Entity", secondary=entity_entity,
                             back_populates='entities',
                             primaryjoin=id == entity_entity.c.entity_one_id,
-                            secondaryjoin=id == entity_entity.c.entity_two_id)
-    strings = relationship(Strings)
-    booleans = relationship(Booleans)
-    integers = relationship(Integers)
-    floats = relationship(Floats)
+                            secondaryjoin=id == entity_entity.c.entity_two_id,
+                            collection_class=
+                            attribute_mapped_collection('name'),
+                            cascade='all, delete-orphan')
+    strings = relationship(Strings, cascade='all, delete-orphan')
+    booleans = relationship(Booleans, cascade='all, delete-orphan')
+    integers = relationship(Integers, cascade='all, delete-orphan')
+    floats = relationship(Floats, cascade='all, delete-orphan')
 
 
 class RootEntities(Base, BaseMixin):
@@ -141,14 +145,14 @@ user_group = Table('usergroup', Base.metadata,
 class Group(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations)
+    display_name = relationship(Translations, cascade='all, delete-orphan')
     user = relationship("User", secondary=user_group, back_populates='group')
 
 
 class User(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations)
+    display_name = relationship(Translations, cascade='all, delete-orphan')
     password = Column(PasswordType(schemes=['pbkdf2_sha512']))
     locale = Column(LocaleType)
     email = Column(EmailType)
