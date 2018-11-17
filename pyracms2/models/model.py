@@ -70,6 +70,11 @@ class Translations(Base, BaseMixin):
     translations = relationship(Translation, cascade='all, delete-orphan')
 
 
+def translations_relationship():
+    return relationship(Translations, single_parent=True,
+                        cascade='all, delete-orphan')
+
+
 entity_entity = Table('entityentity', Base.metadata,
                       Column("entity_one_id", Integer,
                             ForeignKey('entity.id')),
@@ -114,7 +119,7 @@ class Entity(Base, BaseMixin):
     name = Column(Unicode)
     route_name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations, cascade='all, delete-orphan')
+    display_name = translations_relationship()
     domain_id = Column(Integer, ForeignKey('domain.id'))
     domain = relationship(Domain)
     translations = relationship(Translations, secondary=entity_translations)
@@ -124,6 +129,7 @@ class Entity(Base, BaseMixin):
                             secondaryjoin=id == entity_entity.c.entity_two_id,
                             collection_class=
                             attribute_mapped_collection('name'),
+                            single_parent=True,
                             cascade='all, delete-orphan')
     strings = relationship(Strings, cascade='all, delete-orphan')
     booleans = relationship(Booleans, cascade='all, delete-orphan')
@@ -145,14 +151,14 @@ user_group = Table('usergroup', Base.metadata,
 class Group(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations, cascade='all, delete-orphan')
+    display_name = translations_relationship()
     user = relationship("User", secondary=user_group, back_populates='group')
 
 
 class User(Base, BaseMixin):
     name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = relationship(Translations, cascade='all, delete-orphan')
+    display_name = translations_relationship()
     password = Column(PasswordType(schemes=['pbkdf2_sha512']))
     locale = Column(LocaleType)
     email = Column(EmailType)
