@@ -114,6 +114,26 @@ class Booleans(Base, DataType):
     boolean = Column(Boolean(name="boolean"))
 
 
+class Countries(Base, DataType):
+    country = Column(CountryType)
+
+
+class Locales(Base, DataType):
+    locale = Column(LocaleType)
+
+
+class Passwords(Base, DataType):
+    password = Column(PasswordType(schemes=['pbkdf2_sha512']))
+
+
+class Dates(Base, DataType):
+    date = Column(DateTime, default=datetime.utcnow)
+
+
+class Emails(Base, DataType):
+    email = Column(EmailType)
+
+
 class Entity(Base, BaseMixin):
     name = Column(Unicode)
     route_name = Column(Unicode)
@@ -139,34 +159,13 @@ class Entity(Base, BaseMixin):
     booleans = relationship(Booleans, cascade='all, delete-orphan')
     integers = relationship(Integers, cascade='all, delete-orphan')
     floats = relationship(Floats, cascade='all, delete-orphan')
+    countries = relationship(Countries, cascade='all, delete-orphan')
+    locales = relationship(Locales, cascade='all, delete-orphan')
+    passwords = relationship(Passwords, cascade='all, delete-orphan')
+    dates = relationship(Dates, cascade='all, delete-orphan')
+    emails = relationship(Emails, cascade='all, delete-orphan')
 
 
 class RootEntities(Base, BaseMixin):
     entity_id = Column(Integer, ForeignKey('entity.id'))
     entity = relationship(Entity)
-
-
-user_group = Table('usergroup', Base.metadata,
-                   Column('user_id', Integer, ForeignKey('user.id')),
-                   Column('group_id', Integer, ForeignKey('group.id'))
-                   )
-
-
-class Group(Base, BaseMixin):
-    name = Column(Unicode)
-    display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = translations_relationship()
-    user = relationship("User", secondary=user_group, back_populates='group')
-
-
-class User(Base, BaseMixin):
-    name = Column(Unicode)
-    display_name_id = Column(Integer, ForeignKey('translations.id'))
-    display_name = translations_relationship()
-    password = Column(PasswordType(schemes=['pbkdf2_sha512']))
-    locale = Column(LocaleType)
-    email = Column(EmailType)
-    country = Column(CountryType)
-    entity_id = Column(Integer, ForeignKey('entity.id'))
-    entity = relationship(Entity)
-    group = relationship(Group, secondary=user_group, back_populates='user')
