@@ -115,7 +115,6 @@ class Booleans(Base, DataType):
 
 
 class Entity(Base, BaseMixin):
-    id = Column(Integer, primary_key=True)
     name = Column(Unicode)
     route_name = Column(Unicode)
     display_name_id = Column(Integer, ForeignKey('translations.id'))
@@ -123,10 +122,15 @@ class Entity(Base, BaseMixin):
     domain_id = Column(Integer, ForeignKey('domain.id'))
     domain = relationship(Domain)
     translations = relationship(Translations, secondary=entity_translations)
-    entities = relationship("Entity", secondary=entity_entity,
+
+    @declared_attr
+    def entities(self):
+        return relationship("Entity", secondary=entity_entity,
                             back_populates='entities',
-                            primaryjoin=id == entity_entity.c.entity_one_id,
-                            secondaryjoin=id == entity_entity.c.entity_two_id,
+                            primaryjoin=
+                            self.id == entity_entity.c.entity_one_id,
+                            secondaryjoin=
+                            self.id == entity_entity.c.entity_two_id,
                             collection_class=
                             attribute_mapped_collection('name'),
                             single_parent=True,
