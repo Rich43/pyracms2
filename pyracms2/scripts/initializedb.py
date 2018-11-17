@@ -8,7 +8,6 @@ from pyramid.paster import (
 )
 
 from pyramid.scripts.common import parse_vars
-from sqlalchemy_utils import Country
 
 from ..models import (
     get_engine,
