@@ -49,7 +49,11 @@ class Util:
     @staticmethod
     def sql_alchemy_type_to_python_type(db_cls, attribute: str):
         try:
-            python_type = getattr(db_cls, attribute).type.python_type
+            attr = getattr(db_cls, attribute)
+            if hasattr(attr, 'type'):
+                python_type = attr.type.python_type
+            else:
+                return attr.property.argument
         except NotImplementedError:
             python_type = str
         if python_type.__name__ == 'datetime':
@@ -90,8 +94,7 @@ class Parser:
         for cls in Util.iter_sub_classes(model.Base):
             add_parser = Parser.add_parser_set_default(add_sub_parser, cls, 2)
             db_cls = getattr(model, cls)
-            attributes = db_cls.__table__.columns.keys()
-            for attribute in attributes:
+            for attribute in db_cls.all_attributes(db_cls):
                 python_type = Util.sql_alchemy_type_to_python_type(
                     db_cls,
                     attribute

@@ -1,4 +1,6 @@
+from sqlalchemy import Table
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.schema import MetaData
 
 # Recommended naming convention used by Alembic, as various different database
@@ -13,4 +15,17 @@ NAMING_CONVENTION = {
 }
 
 metadata = MetaData(naming_convention=NAMING_CONVENTION)
-Base = declarative_base(metadata=metadata)
+
+
+class BaseMixin(object):
+    __table__: Table = None
+
+    def all_attributes(self):
+        return {k: v for k, v in vars(self).items()
+                if isinstance(v, InstrumentedAttribute)}
+
+    def all_columns(self):
+        return self.__table__.columns.keys()
+
+
+Base = declarative_base(metadata=metadata, cls=BaseMixin)
