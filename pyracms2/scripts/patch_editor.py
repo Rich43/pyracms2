@@ -53,7 +53,11 @@ class Util:
             if hasattr(attr, 'type'):
                 python_type = attr.type.python_type
             else:
-                return attr.property.argument
+                argument = attr.property.argument
+                classes = Util.iter_sub_classes(model.Base)
+                if argument in [getattr(model, x) for x in classes]:
+                    return str
+                return argument
         except NotImplementedError:
             python_type = str
         if python_type.__name__ == 'datetime':
@@ -118,8 +122,8 @@ class ResultHandler:
     def handle_add(self):
         if (self.has_sub_parser_1 and self.has_sub_parser_2 and
                 self.has_arguments and self.args.sub_parser_1 == ADD):
-            db_cls = getattr(model, self.args.sub_parser_2, None)
             self.print_help = False
+            db_cls = getattr(model, self.args.sub_parser_2, None)
 
 
 def main():
